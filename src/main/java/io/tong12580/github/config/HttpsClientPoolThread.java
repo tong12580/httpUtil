@@ -8,6 +8,7 @@ import org.apache.http.HttpEntityEnclosingRequest;
 import org.apache.http.HttpRequest;
 import org.apache.http.NoHttpResponseException;
 import org.apache.http.client.HttpRequestRetryHandler;
+import org.apache.http.client.config.CookieSpecs;
 import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.protocol.HttpClientContext;
 import org.apache.http.config.Registry;
@@ -108,6 +109,7 @@ public class HttpsClientPoolThread {
                     .setConnectionRequestTimeout(HttpUniversalHeaderParams.TIME_OUT)
                     .setConnectTimeout(HttpUniversalHeaderParams.TIME_OUT)
                     .setSocketTimeout(HttpUniversalHeaderParams.TIME_OUT)
+                    .setCookieSpec(CookieSpecs.STANDARD)
                     .build();
             List<Header> defaultHeaders = new ArrayList<Header>() {{
                 add(new BasicHeader(HTTP.CONTENT_TYPE, HttpUniversalHeaderParams.CONTENT_TYPE_JSON));

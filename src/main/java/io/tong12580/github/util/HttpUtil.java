@@ -8,7 +8,9 @@ import org.apache.http.Header;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.entity.UrlEncodedFormEntity;
 import org.apache.http.client.methods.CloseableHttpResponse;
+import org.apache.http.client.methods.HttpDelete;
 import org.apache.http.client.methods.HttpGet;
+import org.apache.http.client.methods.HttpPatch;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.methods.HttpPut;
 import org.apache.http.entity.StringEntity;
@@ -88,16 +90,7 @@ public class HttpUtil {
     public static HttpResponse get(String url, List<Header> headers, Map<String, String> params) {
         CloseableHttpClient httpClient = HttpsClientPoolThread.getInstance().createHttpOrHttpsClientDefault();
         if (null != params && params.size() > 0) {
-            StringBuilder urlMap = new StringBuilder(url);
-            urlMap.append("?");
-            Object keyValue;
-            for (String key : params.keySet()) {
-                keyValue = params.get(key);
-                if (null != keyValue && !Objects.equals(keyValue, "")) {
-                    urlMap.append(key).append("=").append(keyValue).append("&");
-                }
-            }
-            url = urlMap.toString();
+            url = buildUrlParams(url, params);
         }
         HttpGet httpGet = new HttpGet(url);
         if (null != headers && headers.size() > 0) {
@@ -173,6 +166,168 @@ public class HttpUtil {
     }
 
     /**
+     * put 请求
+     *
+     * @param url String
+     * @return HttpResponse
+     */
+    public static HttpResponse put(String url) {
+        return put(url, null, null, null);
+    }
+
+    /**
+     * put 请求
+     *
+     * @param url  String
+     * @param json String
+     * @return HttpResponse
+     */
+    public static HttpResponse put(String url, String json) {
+        return put(url, json, null, null);
+    }
+
+    /**
+     * put 请求
+     *
+     * @param url     String
+     * @param json    String
+     * @param headers List<Header>
+     * @return HttpResponse
+     */
+    public static HttpResponse put(String url, String json, List<Header> headers) {
+        return put(url, json, headers, null);
+    }
+
+    /**
+     * put 请求
+     *
+     * @param url        String
+     * @param headers    List<Header>
+     * @param formParams Map<String, String>
+     * @return HttpResponse
+     */
+    public static HttpResponse put(String url, List<Header> headers, Map<String, String> formParams) {
+        return put(url, null, headers, formParams);
+    }
+
+    /**
+     * put 请求
+     *
+     * @param url        String
+     * @param formParams Map<String, String>
+     * @return HttpResponse
+     */
+    public static HttpResponse put(String url, Map<String, String> formParams) {
+        return put(url, null, null, formParams);
+    }
+
+    /**
+     * patch 请求
+     *
+     * @param url        String
+     * @param json       String
+     * @param headers    List<Header>
+     * @param formParams Map<String, String>
+     * @return HttpResponse
+     */
+    public static HttpResponse patch(String url, String json, List<Header> headers, Map<String, String> formParams) {
+        CloseableHttpClient httpClient = HttpsClientPoolThread.getInstance().createHttpOrHttpsClientDefault();
+        HttpPatch httpPatch = new HttpPatch(url);
+        if (null != headers && headers.size() > 0) {
+            headers.forEach(httpPatch::addHeader);
+        }
+        if (null != json) {
+            httpPatch.setEntity(new StringEntity(json, Consts.UTF_8));
+        }
+        if (null != formParams && formParams.size() > 0) {
+            httpPatch.setEntity(new UrlEncodedFormEntity(getBasicNameValuePair(formParams), Consts.UTF_8));
+        }
+        try (CloseableHttpResponse response = httpClient.execute(httpPatch)) {
+            return response;
+        } catch (IOException e) {
+            log.error(e);
+            return null;
+        }
+
+    }
+
+    /**
+     * patch 请求
+     *
+     * @param url String
+     * @return HttpResponse
+     */
+    public static HttpResponse patch(String url) {
+        return patch(url, null, null, null);
+    }
+
+    /**
+     * patch 请求
+     *
+     * @param url  String
+     * @param json String
+     * @return HttpResponse
+     */
+    public static HttpResponse patch(String url, String json) {
+        return patch(url, json, null, null);
+    }
+
+    /**
+     * patch 请求
+     *
+     * @param url     String
+     * @param json    String
+     * @param headers List<Header>
+     * @return HttpResponse
+     */
+    public static HttpResponse patch(String url, String json, List<Header> headers) {
+        return patch(url, json, headers, null);
+    }
+
+    /**
+     * patch 请求
+     *
+     * @param url        String
+     * @param headers    List<Header>
+     * @param formParams Map<String, String>
+     * @return HttpResponse
+     */
+    public static HttpResponse patch(String url, List<Header> headers, Map<String, String> formParams) {
+        return patch(url, null, headers, formParams);
+    }
+
+    /**
+     * patch 请求
+     *
+     * @param url        String
+     * @param formParams Map<String, String>
+     * @return HttpResponse
+     */
+    public static HttpResponse patch(String url, Map<String, String> formParams) {
+        return patch(url, null, null, formParams);
+    }
+
+
+    public static HttpResponse delete(String url, List<Header> headers, Map<String, String> params) {
+        CloseableHttpClient httpClient = HttpsClientPoolThread.getInstance().createHttpOrHttpsClientDefault();
+        if (null != params && params.size() > 0) {
+            url = buildUrlParams(url, params);
+        }
+        HttpDelete httpDelete = new HttpDelete(url);
+        if (null != headers && headers.size() > 0) {
+            headers.forEach(httpDelete::addHeader);
+        }
+        try (CloseableHttpResponse response = httpClient.execute(httpDelete)) {
+            return response;
+        } catch (IOException e) {
+            log.error(e);
+            return null;
+        }
+    }
+
+
+
+    /**
      * 构建表单参数
      *
      * @param formParams Map<String, String>
@@ -185,5 +340,18 @@ public class HttpUtil {
             pairs.add(valuePair);
         }
         return pairs;
+    }
+
+    private static String buildUrlParams(String url, Map<String, String> params) {
+        StringBuilder urlMap = new StringBuilder(url);
+        urlMap.append("?");
+        Object keyValue;
+        for (String key : params.keySet()) {
+            keyValue = params.get(key);
+            if (null != keyValue && !Objects.equals(keyValue, "")) {
+                urlMap.append(key).append("=").append(keyValue).append("&");
+            }
+        }
+        return urlMap.toString();
     }
 }
