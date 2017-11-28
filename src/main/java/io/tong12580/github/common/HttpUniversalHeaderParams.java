@@ -12,7 +12,7 @@ public interface HttpUniversalHeaderParams {
     int MAX_TOTAL = 200;
     int MAX_CON_PER_ROUTE = 20;
     int TIME_OUT = 10000;
-    String USER_AGENT_MSG = "Mozilla/5.0 (Windows; U; Windows NT 5.1; zh-CN; rv:1.9.1.2)";
+    String USER_AGENT_MSG = "Mozilla/5.0 (iPhone; CPU iPhone OS 9_1 like Mac OS X) AppleWebKit/601.1.46 (KHTML, like Gecko) Version/9.0 Mobile/13B143 Safari/601.1";
     String ACCEPT_LANGUAGE_MSG = "zh-CN,zh;q=0.8,en-US;q=0.5,en;q=0.3";
     String ACCEPT_CHARSET_MSG = "GB2312,utf-8;q=0.7,*;q=0.7";
     String ACCEPT_CHARSET = "Accept-Charset";
@@ -20,7 +20,7 @@ public interface HttpUniversalHeaderParams {
     String ACCEPT_LANGUAGE = "Accept-Language";
     String ACCEPT_ENCODING = "Accept-Encoding";
     String ACCEPT_ENCODING_MSG = "gzip,deflate";
-    String SELECT_PUBLIC_IP_ADDRESS = "http://www.ip138.com/ip2city.asp";
+    String SELECT_PUBLIC_IP_ADDRESS = "http://city.ip138.com/ip2city.asp";
     String CONTENT_TYPE_APPLICATION_OCTET_STREAM = "application/octet-stream";
     String LOCATION = "Location";
     String CONTENT_DISPOSITION = "Content-Disposition";

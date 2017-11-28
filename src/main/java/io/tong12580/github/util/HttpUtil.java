@@ -1,27 +1,32 @@
 package io.tong12580.github.util;
 
 import io.tong12580.github.config.HttpsClientPoolThread;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 import org.apache.http.Consts;
 import org.apache.http.Header;
+import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.entity.UrlEncodedFormEntity;
-import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpDelete;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPatch;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.methods.HttpPut;
+import org.apache.http.client.utils.URIBuilder;
+import org.apache.http.cookie.Cookie;
+import org.apache.http.cookie.CookieOrigin;
 import org.apache.http.entity.StringEntity;
+import org.apache.http.impl.client.BasicCookieStore;
 import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.impl.cookie.DefaultCookieSpec;
 import org.apache.http.message.BasicNameValuePair;
+import org.apache.http.util.EntityUtils;
 
 import java.io.IOException;
+import java.net.URISyntaxException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 
 /**
  * @author yuton
@@ -31,7 +36,8 @@ import java.util.Objects;
  */
 public class HttpUtil {
 
-    private static Log log = LogFactory.getLog(HttpUtil.class);
+    private static volatile CloseableHttpClient httpClient;
+    private static volatile BasicCookieStore cookieStore;
 
     /**
      * @param url     String
@@ -39,10 +45,10 @@ public class HttpUtil {
      * @param headers List<Header> 请求头
      * @return HttpResponse
      */
-    public static HttpResponse post(String url, String json, List<Header> headers, Map<String, String> formParams) {
-        CloseableHttpClient httpClient;
+    public static HttpResponse post(String url, String json, List<Header> headers, Map<String, String> formParams)
+            throws IOException, URISyntaxException {
         httpClient = HttpsClientPoolThread.getInstance().createHttpOrHttpsClientDefault();
-        HttpPost httpPost = new HttpPost(url);
+        HttpPost httpPost = new HttpPost(new URIBuilder(url).build());
         if (null != headers && headers.size() > 0) {
             headers.forEach(httpPost::addHeader);
         }
@@ -52,12 +58,7 @@ public class HttpUtil {
         if (null != formParams && formParams.size() > 0) {
             httpPost.setEntity(new UrlEncodedFormEntity(getBasicNameValuePair(formParams), Consts.UTF_8));
         }
-        try (CloseableHttpResponse response = httpClient.execute(httpPost)) {
-            return response;
-        } catch (IOException e) {
-            log.error(e);
-            return null;
-        }
+        return httpClient.execute(httpPost);
     }
 
     /**
@@ -65,7 +66,7 @@ public class HttpUtil {
      * @param json String json字符串
      * @return HttpResponse
      */
-    public static HttpResponse post(String url, String json) {
+    public static HttpResponse post(String url, String json) throws IOException, URISyntaxException {
         return post(url, json, null, null);
     }
 
@@ -75,7 +76,7 @@ public class HttpUtil {
      * @param url String
      * @return HttpResponse
      */
-    public static HttpResponse post(String url) {
+    public static HttpResponse post(String url) throws IOException, URISyntaxException {
         return post(url, null, null, null);
     }
 
@@ -87,21 +88,17 @@ public class HttpUtil {
      * @param headers List<Header>
      * @return HttpResponse
      */
-    public static HttpResponse get(String url, List<Header> headers, Map<String, String> params) {
-        CloseableHttpClient httpClient = HttpsClientPoolThread.getInstance().createHttpOrHttpsClientDefault();
+    public static HttpResponse get(String url, List<Header> headers, Map<String, String> params)
+            throws IOException, URISyntaxException {
+        httpClient = HttpsClientPoolThread.getInstance().createHttpOrHttpsClientDefault();
         if (null != params && params.size() > 0) {
             url = buildUrlParams(url, params);
         }
-        HttpGet httpGet = new HttpGet(url);
+        HttpGet httpGet = new HttpGet(new URIBuilder(url).build());
         if (null != headers && headers.size() > 0) {
             headers.forEach(httpGet::addHeader);
         }
-        try (CloseableHttpResponse response = httpClient.execute(httpGet)) {
-            return response;
-        } catch (IOException e) {
-            log.error(e);
-            return null;
-        }
+        return httpClient.execute(httpGet);
     }
 
     /**
@@ -111,7 +108,7 @@ public class HttpUtil {
      * @param params Map<String, String>
      * @return HttpResponse
      */
-    public static HttpResponse get(String url, Map<String, String> params) {
+    public static HttpResponse get(String url, Map<String, String> params) throws IOException, URISyntaxException {
         return get(url, null, params);
     }
 
@@ -122,7 +119,7 @@ public class HttpUtil {
      * @param headers List<Header>
      * @return HttpResponse
      */
-    public static HttpResponse get(String url, List<Header> headers) {
+    public static HttpResponse get(String url, List<Header> headers) throws IOException, URISyntaxException {
         return get(url, headers, null);
     }
 
@@ -132,7 +129,7 @@ public class HttpUtil {
      * @param url String
      * @return HttpResponse
      */
-    public static HttpResponse get(String url) {
+    public static HttpResponse get(String url) throws IOException, URISyntaxException {
         return get(url, null, null);
     }
 
@@ -145,7 +142,8 @@ public class HttpUtil {
      * @param formParams Map<String, String>
      * @return HttpResponse
      */
-    public static HttpResponse put(String url, String json, List<Header> headers, Map<String, String> formParams) {
+    public static HttpResponse put(String url, String json, List<Header> headers, Map<String, String> formParams)
+            throws IOException {
         CloseableHttpClient httpClient = HttpsClientPoolThread.getInstance().createHttpOrHttpsClientDefault();
         HttpPut httpPut = new HttpPut(url);
         if (null != headers && headers.size() > 0) {
@@ -157,12 +155,7 @@ public class HttpUtil {
         if (null != formParams && formParams.size() > 0) {
             httpPut.setEntity(new UrlEncodedFormEntity(getBasicNameValuePair(formParams), Consts.UTF_8));
         }
-        try (CloseableHttpResponse response = httpClient.execute(httpPut)) {
-            return response;
-        } catch (IOException e) {
-            log.error(e);
-            return null;
-        }
+        return httpClient.execute(httpPut);
     }
 
     /**
@@ -171,7 +164,7 @@ public class HttpUtil {
      * @param url String
      * @return HttpResponse
      */
-    public static HttpResponse put(String url) {
+    public static HttpResponse put(String url) throws IOException {
         return put(url, null, null, null);
     }
 
@@ -182,7 +175,7 @@ public class HttpUtil {
      * @param json String
      * @return HttpResponse
      */
-    public static HttpResponse put(String url, String json) {
+    public static HttpResponse put(String url, String json) throws IOException {
         return put(url, json, null, null);
     }
 
@@ -194,7 +187,7 @@ public class HttpUtil {
      * @param headers List<Header>
      * @return HttpResponse
      */
-    public static HttpResponse put(String url, String json, List<Header> headers) {
+    public static HttpResponse put(String url, String json, List<Header> headers) throws IOException {
         return put(url, json, headers, null);
     }
 
@@ -206,7 +199,7 @@ public class HttpUtil {
      * @param formParams Map<String, String>
      * @return HttpResponse
      */
-    public static HttpResponse put(String url, List<Header> headers, Map<String, String> formParams) {
+    public static HttpResponse put(String url, List<Header> headers, Map<String, String> formParams) throws IOException {
         return put(url, null, headers, formParams);
     }
 
@@ -217,7 +210,7 @@ public class HttpUtil {
      * @param formParams Map<String, String>
      * @return HttpResponse
      */
-    public static HttpResponse put(String url, Map<String, String> formParams) {
+    public static HttpResponse put(String url, Map<String, String> formParams) throws IOException {
         return put(url, null, null, formParams);
     }
 
@@ -230,7 +223,7 @@ public class HttpUtil {
      * @param formParams Map<String, String>
      * @return HttpResponse
      */
-    public static HttpResponse patch(String url, String json, List<Header> headers, Map<String, String> formParams) {
+    public static HttpResponse patch(String url, String json, List<Header> headers, Map<String, String> formParams) throws IOException {
         CloseableHttpClient httpClient = HttpsClientPoolThread.getInstance().createHttpOrHttpsClientDefault();
         HttpPatch httpPatch = new HttpPatch(url);
         if (null != headers && headers.size() > 0) {
@@ -242,12 +235,7 @@ public class HttpUtil {
         if (null != formParams && formParams.size() > 0) {
             httpPatch.setEntity(new UrlEncodedFormEntity(getBasicNameValuePair(formParams), Consts.UTF_8));
         }
-        try (CloseableHttpResponse response = httpClient.execute(httpPatch)) {
-            return response;
-        } catch (IOException e) {
-            log.error(e);
-            return null;
-        }
+        return httpClient.execute(httpPatch);
 
     }
 
@@ -257,7 +245,7 @@ public class HttpUtil {
      * @param url String
      * @return HttpResponse
      */
-    public static HttpResponse patch(String url) {
+    public static HttpResponse patch(String url) throws IOException {
         return patch(url, null, null, null);
     }
 
@@ -268,7 +256,7 @@ public class HttpUtil {
      * @param json String
      * @return HttpResponse
      */
-    public static HttpResponse patch(String url, String json) {
+    public static HttpResponse patch(String url, String json) throws IOException {
         return patch(url, json, null, null);
     }
 
@@ -280,7 +268,7 @@ public class HttpUtil {
      * @param headers List<Header>
      * @return HttpResponse
      */
-    public static HttpResponse patch(String url, String json, List<Header> headers) {
+    public static HttpResponse patch(String url, String json, List<Header> headers) throws IOException {
         return patch(url, json, headers, null);
     }
 
@@ -292,7 +280,7 @@ public class HttpUtil {
      * @param formParams Map<String, String>
      * @return HttpResponse
      */
-    public static HttpResponse patch(String url, List<Header> headers, Map<String, String> formParams) {
+    public static HttpResponse patch(String url, List<Header> headers, Map<String, String> formParams) throws IOException {
         return patch(url, null, headers, formParams);
     }
 
@@ -303,12 +291,11 @@ public class HttpUtil {
      * @param formParams Map<String, String>
      * @return HttpResponse
      */
-    public static HttpResponse patch(String url, Map<String, String> formParams) {
+    public static HttpResponse patch(String url, Map<String, String> formParams) throws IOException {
         return patch(url, null, null, formParams);
     }
 
-
-    public static HttpResponse delete(String url, List<Header> headers, Map<String, String> params) {
+    public static HttpResponse delete(String url, List<Header> headers, Map<String, String> params) throws IOException {
         CloseableHttpClient httpClient = HttpsClientPoolThread.getInstance().createHttpOrHttpsClientDefault();
         if (null != params && params.size() > 0) {
             url = buildUrlParams(url, params);
@@ -317,14 +304,8 @@ public class HttpUtil {
         if (null != headers && headers.size() > 0) {
             headers.forEach(httpDelete::addHeader);
         }
-        try (CloseableHttpResponse response = httpClient.execute(httpDelete)) {
-            return response;
-        } catch (IOException e) {
-            log.error(e);
-            return null;
-        }
+        return httpClient.execute(httpDelete);
     }
-
 
 
     /**
@@ -345,13 +326,64 @@ public class HttpUtil {
     private static String buildUrlParams(String url, Map<String, String> params) {
         StringBuilder urlMap = new StringBuilder(url);
         urlMap.append("?");
-        Object keyValue;
+        String keyValue;
         for (String key : params.keySet()) {
             keyValue = params.get(key);
-            if (null != keyValue && !Objects.equals(keyValue, "")) {
+            if (null != keyValue && !"".equals(keyValue)) {
                 urlMap.append(key).append("=").append(keyValue).append("&");
             }
         }
         return urlMap.toString();
+    }
+
+    /**
+     * 获取当前Http客户端状态中的Cookie
+     *
+     * @param domain    作用域
+     * @param port      端口 传null 默认80
+     * @param path      Cookie路径 传null 默认"/"
+     * @param useSecure Cookie是否采用安全机制 传null 默认false
+     * @return String
+     */
+    public static Map<String, Cookie> getCookie(String domain, Integer port, String path, Boolean useSecure) {
+        if (domain == null) {
+            return null;
+        }
+        if (port == null) {
+            port = 80;
+        }
+        if (path == null) {
+            path = "/";
+        }
+        if (useSecure == null) {
+            useSecure = false;
+        }
+        List<Cookie> cookies = cookieStore.getCookies();
+        if (cookies == null || cookies.isEmpty()) {
+            return null;
+        }
+        CookieOrigin origin = new CookieOrigin(domain, port, path, useSecure);
+        DefaultCookieSpec cookieSpec = new DefaultCookieSpec(null, false);
+        Map<String, Cookie> retVal = new HashMap<>();
+        for (Cookie cookie : cookies) {
+            if (cookieSpec.match(cookie, origin)) {
+                retVal.put(cookie.getName(), cookie);
+            }
+        }
+        return retVal;
+    }
+
+    public static void main(String[] args) throws IOException {
+        HttpResponse httpResponse;
+        try {
+            httpResponse = get("https://www.baidu.com/");
+            HttpEntity entity = httpResponse.getEntity();
+            if (null != entity) {
+                System.out.println(EntityUtils.toString(entity, Consts.UTF_8));
+                System.out.println(getCookie(null, null, null, null));
+            }
+        } catch (IOException | URISyntaxException e) {
+            e.printStackTrace();
+        }
     }
 }
