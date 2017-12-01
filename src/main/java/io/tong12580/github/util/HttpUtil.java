@@ -372,18 +372,4 @@ public class HttpUtil {
         }
         return retVal;
     }
-
-    public static void main(String[] args) throws IOException {
-        HttpResponse httpResponse;
-        try {
-            httpResponse = get("https://www.baidu.com/");
-            HttpEntity entity = httpResponse.getEntity();
-            if (null != entity) {
-                System.out.println(EntityUtils.toString(entity, Consts.UTF_8));
-                System.out.println(getCookie(null, null, null, null));
-            }
-        } catch (IOException | URISyntaxException e) {
-            e.printStackTrace();
-        }
-    }
 }
