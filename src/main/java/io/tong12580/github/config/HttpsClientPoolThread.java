@@ -3,10 +3,7 @@ package io.tong12580.github.config;
 import io.tong12580.github.common.HttpUniversalHeaderParams;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.apache.http.Header;
-import org.apache.http.HttpEntityEnclosingRequest;
-import org.apache.http.HttpRequest;
-import org.apache.http.NoHttpResponseException;
+import org.apache.http.*;
 import org.apache.http.client.HttpRequestRetryHandler;
 import org.apache.http.client.config.CookieSpecs;
 import org.apache.http.client.config.RequestConfig;
@@ -62,7 +59,7 @@ public class HttpsClientPoolThread {
         return httpsClientPoolThread;
     }
 
-    public CloseableHttpClient createHttpOrHttpsClientDefault() {
+    public CloseableHttpClient createHttpOrHttpsClientDefault(String ip, String port) {
         try {
             SSLContext sslContext = new SSLContextBuilder()
                     .loadTrustMaterial(null, (chain, authType) -> true)
@@ -104,13 +101,17 @@ public class HttpsClientPoolThread {
                 HttpRequest request = clientContext.getRequest();
                 return !(request instanceof HttpEntityEnclosingRequest);
             };
-            RequestConfig requestConfig = RequestConfig
+            RequestConfig.Builder builder = RequestConfig
                     .custom()
                     .setConnectionRequestTimeout(HttpUniversalHeaderParams.TIME_OUT)
                     .setConnectTimeout(HttpUniversalHeaderParams.TIME_OUT)
                     .setSocketTimeout(HttpUniversalHeaderParams.TIME_OUT)
-                    .setCookieSpec(CookieSpecs.STANDARD)
-                    .build();
+                    .setCookieSpec(CookieSpecs.STANDARD);
+            if (null != ip && !"".equals(ip) && null != port && !"".equals(port)) {
+                HttpHost proxy = new HttpHost(ip, Integer.parseInt(port));
+                builder.setProxy(proxy);
+            }
+            RequestConfig requestConfig = builder.build();
             List<Header> defaultHeaders = new ArrayList<Header>() {{
                 add(new BasicHeader(HTTP.CONTENT_TYPE, HttpUniversalHeaderParams.CONTENT_TYPE_JSON));
                 add(new BasicHeader(HTTP.USER_AGENT, HttpUniversalHeaderParams.USER_AGENT_MSG));
@@ -130,6 +131,10 @@ public class HttpsClientPoolThread {
             log.error(e);
         }
         return HttpClients.createDefault();
+    }
+
+    public CloseableHttpClient createHttpOrHttpsClientDefault() {
+        return createHttpOrHttpsClientDefault(null, null);
     }
 }
 
